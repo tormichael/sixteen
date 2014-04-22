@@ -242,6 +242,24 @@ public class CSVData  extends AbstractTableModel
 		}			
 		return ret;
 	}
+
+	public String getValueAt(int rowIndex, String aColName) 
+	{
+		String ret = null;
+		if (_data.size() > 0)
+		{
+			if (_separator != null)
+			{
+				_ind = 0;
+				ret = _getValInStr(_csvDef.Fields, _data.get(rowIndex), _separator, aColName);
+			}
+			else
+			{
+				ret = _data.get(rowIndex);
+			}
+		}			
+		return ret;
+	}
 	
 	private int _ind;
 	private String _getValInStr(ArrayList<CSVColumnDef> aFields, String aSrc, String aSep, int aInd)
@@ -279,6 +297,35 @@ public class CSVData  extends AbstractTableModel
 		
 		return ret;
 		
+	}
+
+	private String _getValInStr(ArrayList<CSVColumnDef> aFields, String aSrc, String aSep, String aColName)
+	{
+		String ret = null;
+		
+		String[] ss = aSrc.split(aSep, -1);
+
+		int ii = 0;
+		for (CSVColumnDef col: aFields)
+		{
+			if (col.Fields != null && col.Fields.size() > 0)
+			{
+				ret = _getValInStr(col.Fields, ss[ii], col.Separator, aColName);
+				if (ret != null)
+					break;
+			}
+			else if (col.Name.equals(aColName))
+			{
+				if (ii < ss.length)
+				{
+					ret = ss[ii];
+				}
+				break;
+			}
+			ii++;
+		}
+		
+		return ret;
 	}
 	
 	

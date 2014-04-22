@@ -12,7 +12,7 @@ import JCommonTools.CC;
 
 public class ExecWithDB implements Runnable 
 {
-	private Sixteen _wld;
+	protected Sixteen mWld;
 	protected Connection mConn;
 	
 	protected volatile boolean mPause; 
@@ -54,18 +54,18 @@ public class ExecWithDB implements Runnable
 	{
 		mPause = true;
 		mGate.release();
-		infoNewLine(_wld.getString("Text.Pause.StringN") + mCurRow + " (" + new Time(System.currentTimeMillis()) + ")");
+		infoNewLine(mWld.getString("Text.Pause.StringN") + mCurRow + " (" + new Time(System.currentTimeMillis()) + ")");
 	}
 	public void Continue()
 	{
 		mPause = false;
 		mGate.release();
-		infoNewLine(_wld.getString("Text.Continue") + " (" + new Time(System.currentTimeMillis()) + ")");
+		infoNewLine(mWld.getString("Text.Continue") + " (" + new Time(System.currentTimeMillis()) + ")");
 	}
 
 	public ExecWithDB(Sixteen aWld)
 	{
-		_wld = aWld;
+		mWld = aWld;
 		mActFinshed = null;
 		mActError = null;
 		mGate = new Semaphore(1);

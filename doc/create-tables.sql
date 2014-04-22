@@ -116,8 +116,8 @@ CREATE SCHEMA negative
 --DROP TABLE negative.base;
 CREATE TABLE negative.base
 (
+	bs_src_code integer NOT NULL,
 	bs_code integer NOT NULL,
-	bs_srcp integer,
 	bs_name varchar(255),
 	bs_bday char(8),
 	bs_bplace varchar(100),
@@ -131,5 +131,5 @@ CREATE TABLE negative.base
 	bs_3face varchar(255),
 	bs_optional text,
 	
- 	CONSTRAINT base_pkey PRIMARY KEY (bs_code)
+ 	CONSTRAINT base_pkey PRIMARY KEY (bs_src_code, bs_code)
 );

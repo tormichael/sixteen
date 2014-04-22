@@ -24,6 +24,11 @@ public class Sixteen
 	public final static String DEF_TGT_CATALOG = "depot";
 	public final static String DEF_TGT_SCHEMA = "negative";
 	public final static String DEF_TGT_TABLE = "base";
+
+	
+	public final static String FUNCTION_SRC_CODE = "SRC_CODE";
+	public final static String FUNCTION_NEXT_CODE = "NEXT_CODE";
+	public final static String FUNCTION_TO_DATE = "TO_DATE";
 	
 	private ResourceBundle _bnd;
 	private ResourceBundle _bndSQL;

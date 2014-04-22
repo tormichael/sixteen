@@ -567,26 +567,9 @@ public class fCSV extends JFrame
 			infoNewLine(_csv.getResult());
 			infoNewLine("Loaded " + loadedRows + " rows");
 			
-			CSVDefinition csd = _csv.getCSVDef();
-			_txtCSVFileName.setText(csd.FileName);
-			_txtMaxRowAsOnce.setValue(new Integer(_csv.getMaxRowAtOnce()));
-			_chkFirstRowHeader.setSelected(_csv.IsFirstRowHeader());
-			_txtCharSeparator.setText(_csv.getSeparator());
-	
-			_txtISCode.setText(csd.SICode+CC.STR_EMPTY);
-			_txtISName.setText(csd.SIName);
-			_spnISDateDay.setValue(csd.SIDay);
-			_spnISDateMonth.setValue(csd.SIMonth);
-			_spnISDateYear.setValue(csd.SIYear);
-			_txtISRegion.setText(csd.SIRegion);
-			//
-			_txtISNegDesc.setText(csd.SINegDesc);
-			_txtIS3FDesc.setText(csd.SI3fDesc);
-			_txtISOptDesc.setText(csd.SIOptDesc);
+			getCSVDefinition();
 			
-			//_txtDBTableName.setText(csd.TableName);
-			//_txtSQLCreate.setText(csd.SQLCreateTable);
-			//_txtSQLInsert.setText(csd.SQLInsertInto);
+			CSVDefinition csd = _csv.getCSVDef();
 			
 			_tabData.setModel(new tmCSVData(_csv));
 			_tmFields.setCSVDaata(_csv);
@@ -676,7 +659,27 @@ public class fCSV extends JFrame
 		@Override
 		public void actionPerformed(ActionEvent e) 
 		{
+			setCSVDefinition();
 			
+			ExecImport exe = new ExecImport(_wld,  _csv);
+			exe.set_extTextComponent(_txtStatus);
+			exe.set_actFinshed(actImportDataFinished);
+			Thread ct = new Thread(exe);
+			ct.start();
+			
+		}
+	};
+	
+	Action actImportDataFinished = new AbstractAction() {
+		
+		@Override
+		public void actionPerformed(ActionEvent e) 
+		{
+			//_ct = null;
+			//_cmdDo.setEnabled(false);
+			//_cmdExit.setText(_wld.getString("Button.fCronosExport.Ok"));
+			
+			getCSVDefinition();
 		}
 	};
 	
@@ -709,26 +712,9 @@ public class fCSV extends JFrame
 		if (_currCSVDefFN != null && _currCSVDefFN.length() > 0)
 		{
 			CSVDefinition csd = _csv.getCSVDef(); 
-			csd.FileName = _txtCSVFileName.getText();
-			if (_txtMaxRowAsOnce.getValue() != null && _txtMaxRowAsOnce.isEditValid())
-				csd.MaxRowAtOnce = ((Number)_txtMaxRowAsOnce.getValue()).intValue();
-			csd.IsFirstRowHeader = _chkFirstRowHeader.isSelected();
-			csd.Separator = _txtCharSeparator.getText();
-			//csd.TableName = _txtDBTableName.getText();
-			//csd.SQLCreateTable = _txtSQLCreate.getText();
-			//csd.SQLInsertInto = _txtSQLInsert.getText();
-			
-			csd.SICode = Integer.parseInt(_txtISCode.getText());
-			csd.SIName = _txtISName.getText();
-			csd.SIDay = ((SpinnerNumberModel)_spnISDateDay.getModel()).getNumber().intValue();
-			csd.SIMonth = ((SpinnerNumberModel)_spnISDateMonth.getModel()).getNumber().intValue();
-			csd.SIYear = ((SpinnerNumberModel)_spnISDateYear.getModel()).getNumber().intValue();
-			csd.SIRegion = _txtISRegion.getText();
-			//
-			csd.SINegDesc = _txtISNegDesc.getText();
-			csd.SI3fDesc = _txtIS3FDesc.getText();
-			csd.SIOptDesc = _txtISOptDesc.getText();
 
+			setCSVDefinition();
+			
 			TableColumnModel tcm = _tabData.getColumnModel();
 			int ii = 0;
 			for (Enumeration<TableColumn> etc = tcm.getColumns(); etc.hasMoreElements(); ii++)
@@ -741,6 +727,57 @@ public class fCSV extends JFrame
 			else 
 				infoNewLine(String.format(_wld.getString("Text.Message.Successful.Save.ToFile"), _currCSVDefFN));
 		}
+	}
+	
+	private void setCSVDefinition()
+	{
+		CSVDefinition csd = _csv.getCSVDef();
+		
+		csd.FileName = _txtCSVFileName.getText();
+		if (_txtMaxRowAsOnce.getValue() != null && _txtMaxRowAsOnce.isEditValid())
+			csd.MaxRowAtOnce = ((Number)_txtMaxRowAsOnce.getValue()).intValue();
+		csd.IsFirstRowHeader = _chkFirstRowHeader.isSelected();
+		csd.Separator = _txtCharSeparator.getText();
+		
+		//csd.TableName = _txtDBTableName.getText();
+		//csd.SQLCreateTable = _txtSQLCreate.getText();
+		//csd.SQLInsertInto = _txtSQLInsert.getText();
+		
+		csd.SICode = Integer.parseInt(_txtISCode.getText());
+		csd.SIName = _txtISName.getText();
+		csd.SIDay = ((SpinnerNumberModel)_spnISDateDay.getModel()).getNumber().intValue();
+		csd.SIMonth = ((SpinnerNumberModel)_spnISDateMonth.getModel()).getNumber().intValue();
+		csd.SIYear = ((SpinnerNumberModel)_spnISDateYear.getModel()).getNumber().intValue();
+		csd.SIRegion = _txtISRegion.getText();
+		//
+		csd.SINegDesc = _txtISNegDesc.getText();
+		csd.SI3fDesc = _txtIS3FDesc.getText();
+		csd.SIOptDesc = _txtISOptDesc.getText();
+	}
+	
+	private void getCSVDefinition()
+	{
+		CSVDefinition csd = _csv.getCSVDef();
+		_txtCSVFileName.setText(csd.FileName);
+		_txtMaxRowAsOnce.setValue(new Integer(_csv.getMaxRowAtOnce()));
+		_chkFirstRowHeader.setSelected(_csv.IsFirstRowHeader());
+		_txtCharSeparator.setText(_csv.getSeparator());
+
+		_txtISCode.setText(csd.SICode+CC.STR_EMPTY);
+		_txtISName.setText(csd.SIName);
+		_spnISDateDay.setValue(csd.SIDay);
+		_spnISDateMonth.setValue(csd.SIMonth);
+		_spnISDateYear.setValue(csd.SIYear);
+		_txtISRegion.setText(csd.SIRegion);
+		//
+		_txtISNegDesc.setText(csd.SINegDesc);
+		_txtIS3FDesc.setText(csd.SI3fDesc);
+		_txtISOptDesc.setText(csd.SIOptDesc);
+		
+		//_txtDBTableName.setText(csd.TableName);
+		//_txtSQLCreate.setText(csd.SQLCreateTable);
+		//_txtSQLInsert.setText(csd.SQLInsertInto);
+		
 	}
 	
 	private  void  _showCurrentConnectionURL()

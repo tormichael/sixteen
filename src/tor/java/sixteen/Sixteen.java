@@ -29,6 +29,7 @@ public class Sixteen
 	public final static String FUNCTION_SRC_CODE = "SRC_CODE";
 	public final static String FUNCTION_NEXT_CODE = "NEXT_CODE";
 	public final static String FUNCTION_TO_DATE = "TO_DATE";
+	public final static String FUNCTION_UNION = "UNION";
 	
 	private ResourceBundle _bnd;
 	private ResourceBundle _bndSQL;

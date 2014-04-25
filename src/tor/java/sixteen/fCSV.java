@@ -12,6 +12,7 @@ import java.io.File;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -21,6 +22,8 @@ import java.util.prefs.Preferences;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.BorderFactory;
+import javax.swing.DefaultCellEditor;
+import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
@@ -40,7 +43,10 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.JTextPane;
 import javax.swing.JToolBar;
+import javax.swing.JTree;
 import javax.swing.SpinnerNumberModel;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.ListSelectionEvent;
@@ -48,6 +54,10 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
+import javax.swing.table.TableModel;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreeModel;
 
 import JCommonTools.AsRegister;
 import JCommonTools.CC;
@@ -62,9 +72,10 @@ public class fCSV extends JFrame
 	private Sixteen _wld;
 	private String _currCSVDefFN;
 
+	private JTabbedPane 		_tp;
 	private JTextField			_txtCSVFileName;
 	private JTextField			_txtCharSeparator;
-	private JTextField			_txtDBTableName;
+	private JTextField			_txtDBMCondition;
 	private JTextField			_txtISCode;
 	private JTextField			_txtISName;
 	private JSpinner			_spnISDateDay;
@@ -74,28 +85,28 @@ public class fCSV extends JFrame
 	private JTextField			_txtISNegDesc;
 	private JTextField			_txtIS3FDesc;
 	private JTextField			_txtISOptDesc;
-	private JTextPane			_txtSQLCreate;
-	private JTextPane			_txtSQLInsert;
 	private JFormattedTextField	_txtMaxRowAsOnce;
 	private JCheckBox 			_chkFirstRowHeader;
-	private JCheckBox			_chkDoCreateTable;
 	private JComboBox<CodeText> _cboISType;
+	private JComboBox<CodeText> _cboDBMCommand;
 	private JButton				_cmdReloadData;
 	private JButton				_cmdGeneratColumns;
-	private JButton				_cmdGeneratCreateSQLStatement;
-	private JButton				_cmdGeneratInsertSQLStatement;
+	private JButton				_cmdDBMExecute;
 	private tmCSVFields 		_tmFields;
 	private tmColCorr			_tmColCorr;
 	private JTable				_tabData;
 	private JTable				_tabFields;
 	private JTable				_tabColCorr;
+	private JTable				_tabDBMResult;
+	private JLabel				_lblDBMCondition;
+	private JTree				_treeDB;
+	private TreeModel 			_trmDBMetaData;
 	
 	private JTextArea _txtStatus;
-	
-	//private JSplitPane _splHPanel;
+
+	private JScrollPane _pnlDBMResult;
 	private JSplitPane _splVPanel;
-	private JSplitPane _splvSQLCI;
-	private JSplitPane _splvSQL;
+	private JSplitPane _splvDBMan;
 
 	private void info(String aText)
 	{
@@ -140,7 +151,7 @@ public class fCSV extends JFrame
 		bar.addSeparator();
 		
 		
-		JTabbedPane tp = new JTabbedPane();
+		_tp = new JTabbedPane();
 		//
 		// TAB CSV DATA:
 		//
@@ -173,7 +184,7 @@ public class fCSV extends JFrame
 		gblData.setConstraints(scrollTabRes, new GBC(0,2).setGridSpan(3, 1).setIns(2).setFill(GBC.BOTH).setWeight(1.0, 1.0));
 		pnlData.add(scrollTabRes);
 		
-		tp.addTab(_wld.getString("TitledBorder.fCSV.CSVFile"), pnlData);
+		_tp.addTab(_wld.getString("TitledBorder.fCSV.CSVFile"), pnlData);
 		
 		//
 		// TAB CSV PARAM:
@@ -217,49 +228,42 @@ public class fCSV extends JFrame
 		gblRight.setConstraints(scrollTabResFld, new GBC(0,4).setGridSpan(2, 1).setIns(2).setFill(GBC.BOTH).setWeight(1.0, 1.0));
 		pnlRight.add(scrollTabResFld);
 
-		tp.addTab(_wld.getString("TitledBorder.fCSV.CSVProperties"), pnlRight);
+		_tp.addTab(_wld.getString("TitledBorder.fCSV.CSVProperties"), pnlRight);
 
+		
 		//
-		//  TAB SQL:
+		//  TAB DB manager:
 		//
-		GridBagLayout gblSQLCreate = new GridBagLayout();
-		JPanel pnlSQLCreate = new JPanel(gblSQLCreate);
-			_chkDoCreateTable = new JCheckBox(_wld.getString("CheckBox.fCSV.DoCreateTable"));
-			gblSQLCreate.setConstraints(_chkDoCreateTable, new GBC(0,0).setInsets(2, 20, 2, 5));
-			pnlSQLCreate.add(_chkDoCreateTable);
-			_txtDBTableName = new JTextField();
-			gblSQLCreate.setConstraints(_txtDBTableName, new GBC(1,0).setWeight(1.0, 0.0).setFill(GBC.HORIZONTAL));
-			pnlSQLCreate.add(_txtDBTableName);
-			_cmdGeneratCreateSQLStatement = new JButton(actGeneratSQLCreate);
-			_cmdGeneratCreateSQLStatement.setText(_wld.getString("Button.fCSV.GeneratStatement"));
-			gblSQLCreate.setConstraints(_cmdGeneratCreateSQLStatement, new GBC(2,0).setInsets(2, 20, 2, 20).setAnchor(GBC.EAST));
-			pnlSQLCreate.add(_cmdGeneratCreateSQLStatement);
-			_txtSQLCreate = new JTextPane();
-			JScrollPane scrPane = new JScrollPane(_txtSQLCreate);
-			gblSQLCreate.setConstraints(scrPane, new GBC(0,1).setInsets(2, 20, 2, 20).setGridSpan(3, 1).setWeight(1.0, 1.0).setFill(GBC.BOTH));
-			pnlSQLCreate.add(scrPane);
-			
+		_treeDB = new JTree();
+		_trmDBMetaData = null;
+		//_trmDBMetaData = new DefaultTreeModel(new DefaultMutableTreeNode(_wld.getString("Tree.fOrbit.DBStructure.InitTreeNode")));
+		//_treeDB.setModel(_trmDBMetaData);
 
-		GridBagLayout gblSQLInsert = new GridBagLayout();
-		JPanel pnlSQLInsert = new JPanel(gblSQLInsert);
-			JLabel lblSQLInsert = new JLabel(_wld.getString("Label.fCSV.StatementInsert"));
-			gblSQLInsert.setConstraints(lblSQLInsert, new GBC(0,0).setInsets(2, 20, 2, 5).setGridSpan(2, 1));
-			pnlSQLInsert.add(lblSQLInsert);
-			_cmdGeneratInsertSQLStatement = new JButton(actGeneratSQLInsert);
-			_cmdGeneratInsertSQLStatement.setText(_wld.getString("Button.fCSV.GeneratStatement"));
-			gblSQLInsert.setConstraints(_cmdGeneratInsertSQLStatement, new GBC(2,0).setInsets(2, 20, 2, 20).setAnchor(GBC.EAST));
-			pnlSQLInsert.add(_cmdGeneratInsertSQLStatement);
-			_txtSQLInsert = new JTextPane();
-			scrPane = new JScrollPane(_txtSQLInsert);
-			gblSQLInsert.setConstraints(scrPane, new GBC(0,1).setInsets(2, 20, 2, 20).setGridSpan(3, 1).setWeight(1.0, 1.0).setFill(GBC.BOTH));
-			pnlSQLInsert.add(scrPane);
-		
-		GridBagLayout gblSQLParam = new GridBagLayout();
-		JPanel pnlSQLParam = new JPanel(gblSQLParam);
-		
-		_splvSQLCI = new JSplitPane(JSplitPane.VERTICAL_SPLIT, pnlSQLCreate, pnlSQLInsert);
-		_splvSQL = new JSplitPane(JSplitPane.VERTICAL_SPLIT, _splvSQLCI, pnlSQLParam);
-		//tp.addTab(_wld.getString("TabbedPane.fCSV.CSV2DB"), _splvSQL);
+		GridBagLayout gblDBMan = new GridBagLayout();
+		JPanel pnlDBMan = new JPanel(gblDBMan);
+			JLabel lbl = new JLabel(_wld.getString("Label.fCSV.DBM.Command"));
+			gblDBMan.setConstraints(lbl, new GBC(0,0).setIns(2).setAnchor(GBC.WEST));
+			pnlDBMan.add(lbl);
+			_cboDBMCommand = new JComboBox<CodeText>();
+			gblDBMan.setConstraints(_cboDBMCommand, new GBC(1,0).setIns(2).setFill(GBC.HORIZONTAL).setWeight(1.0, 0.0));
+			pnlDBMan.add(_cboDBMCommand);
+			_cmdDBMExecute = new JButton(actDBMExecute);
+			_cmdDBMExecute.setText(_wld.getString("Button.fCSV.DBM.Execute"));
+			gblDBMan.setConstraints(_cmdDBMExecute, new GBC(2,0).setIns(2));
+			pnlDBMan.add(_cmdDBMExecute);
+			_lblDBMCondition = new JLabel(_wld.getString("Label.fCSV.DBM.Condition"));
+			gblDBMan.setConstraints(_lblDBMCondition, new GBC(0,1).setIns(2).setAnchor(GBC.WEST));
+			pnlDBMan.add(_lblDBMCondition);
+			_txtDBMCondition = new JTextField();
+			gblDBMan.setConstraints(_txtDBMCondition, new GBC(1,1).setGridSpan(2, 1).setIns(2).setFill(GBC.HORIZONTAL).setWeight(1.0, 0.0));
+			pnlDBMan.add(_txtDBMCondition);
+			_tabDBMResult = new JTable();
+			_pnlDBMResult = new JScrollPane(_tabDBMResult);
+			_pnlDBMResult.setBorder(BorderFactory.createTitledBorder(_wld.getString("TitledBorder.fCSV.DBM.Result")));
+			gblDBMan.setConstraints(_pnlDBMResult, new GBC(0,2).setGridSpan(3, 1).setIns(2).setFill(GBC.BOTH).setWeight(1.0, 1.0));
+			pnlDBMan.add(_pnlDBMResult);
+		_splvDBMan = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, _treeDB, pnlDBMan);
+		_tp.addTab(_wld.getString("TabbedPane.fCSV.DBMan"), _splvDBMan);
 		
 		//
 		//  TAB Column conformity:
@@ -267,7 +271,7 @@ public class fCSV extends JFrame
 		GridBagLayout gblIS = new GridBagLayout();
 		JPanel pnlIS = new JPanel(gblIS);
 		pnlIS.setBorder(BorderFactory.createTitledBorder(_wld.getString("TitledBorder.fCSV.InfoSource")));
-			JLabel lbl = new JLabel(_wld.getString("Label.fCSV.ISName"));
+			lbl = new JLabel(_wld.getString("Label.fCSV.ISName"));
 			gblIS.setConstraints(lbl, new GBC(0,0).setIns(2).setAnchor(GBC.WEST));
 			pnlIS.add(lbl);
 			_txtISCode = new JTextField();
@@ -363,7 +367,8 @@ public class fCSV extends JFrame
 		JPanel pnlIS_TCC = new JPanel(new BorderLayout());
 		pnlIS_TCC.add(pnlIS, BorderLayout.NORTH);
 		pnlIS_TCC.add(pnlTCC, BorderLayout.CENTER);
-		tp.addTab("***", pnlIS_TCC);
+		_tp.addTab(_wld.getString("TabbedPane.fCSV.ColCor"), pnlIS_TCC);
+		
 		//
 		// DOWN PANEL:
 		//
@@ -373,7 +378,7 @@ public class fCSV extends JFrame
 		
 		//_splHPanel = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, pnlData, pnlRight);
 		//_splVPanel = new JSplitPane(JSplitPane.VERTICAL_SPLIT, _splHPanel, pnlStatus);
-		_splVPanel = new JSplitPane(JSplitPane.VERTICAL_SPLIT, tp, pnlStatus);
+		_splVPanel = new JSplitPane(JSplitPane.VERTICAL_SPLIT, _tp, pnlStatus);
 		add(_splVPanel, BorderLayout.CENTER);
 
 		_tabFields.getSelectionModel().addListSelectionListener(new ListSelectionListener() 
@@ -400,6 +405,45 @@ public class fCSV extends JFrame
 		pppParamTab.add(mnpPTDelete);
 		_tabData.setComponentPopupMenu(pppParamTab);
 
+		/**
+		 * 
+		 */
+		_cboDBMCommand.addItem(new CodeText(1, _wld.getString("Text.DBM.Command.Show")));
+		_cboDBMCommand.addItem(new CodeText(2, _wld.getString("Text.DBM.Command.DeleteRows")));
+		_cboDBMCommand.addItem(new CodeText(3, _wld.getString("Text.DBM.Command.CreateTable")));
+		_cboDBMCommand.addActionListener(new ActionListener() 
+		{
+			@Override
+			public void actionPerformed(ActionEvent e) 
+			{
+				if (((CodeText)_cboDBMCommand.getSelectedItem()).getCode() == 3)
+				{
+					_lblDBMCondition.setText(_wld.getString("Label.fCSV.DBM.TableName"));
+					_pnlDBMResult.setBorder(BorderFactory.createTitledBorder(_wld.getString("TitledBorder.fCSV.DBM.ColDef")));
+					_tabDBMResult.setModel(new tmDBMColDef(_wld));
+					_tabDBMResult.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+				}
+				else
+				{
+					_lblDBMCondition.setText(_wld.getString("Label.fCSV.DBM.Condition"));
+					_pnlDBMResult.setBorder(BorderFactory.createTitledBorder(_wld.getString("TitledBorder.fCSV.DBM.Result")));
+					_tabDBMResult.setModel(new tmDBMResult(null));
+					_tabDBMResult.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+				}
+			}
+		});
+		
+		//
+		JComboBox<String> cboFunction = new JComboBox<String>();
+		_tabColCorr.getColumnModel().getColumn(3).setCellEditor(new DefaultCellEditor(cboFunction));
+		DefaultComboBoxModel<String> modCbo = new DefaultComboBoxModel<String>();
+		modCbo.addElement(CC.STR_EMPTY);
+		modCbo.addElement(Sixteen.FUNCTION_SRC_CODE);
+		modCbo.addElement(Sixteen.FUNCTION_NEXT_CODE);
+		modCbo.addElement(Sixteen.FUNCTION_UNION);
+		modCbo.addElement(Sixteen.FUNCTION_TO_DATE);
+		cboFunction.setModel(modCbo);
+		_tabColCorr.setRowHeight(cboFunction.getPreferredSize().height);
 		
 		this.addWindowListener(new WindowAdapter() 
 		{
@@ -438,6 +482,16 @@ public class fCSV extends JFrame
 			public void changedUpdate(DocumentEvent e) 
 			{
 				_csv.setSeparator(_txtCharSeparator.getText());
+			}
+		});
+		
+		_tp.addChangeListener(new ChangeListener() {
+			
+			@Override
+			public void stateChanged(ChangeEvent e) 
+			{
+				if(_tp.getTitleAt(_tp.getSelectedIndex()).equals(_wld.getString("TabbedPane.fCSV.DBMan")))
+					_showDBManager();
 			}
 		});
 		
@@ -506,29 +560,29 @@ public class fCSV extends JFrame
 		}
 	};
 
-	Action actGeneratSQLCreate = new AbstractAction() 
-	{
-		@Override
-		public void actionPerformed(ActionEvent e) 
-		{
-			String stm = _csv.getCSVDef().getFieldsTypeAsString(","+CC.NEW_LINE+"\t");
-			stm = String.format(_wld.getSQL("Command.Create.Table"), _txtDBTableName.getText(), stm);
-			_txtSQLCreate.setText(stm);
-		}
-	};
-
-	Action actGeneratSQLInsert = new AbstractAction() 
-	{
-		@Override
-		public void actionPerformed(ActionEvent e) 
-		{
-			String stm = String.format(_wld.getSQL("Command.Insert.Into"), 
-					_txtDBTableName.getText(), 
-					_csv.getCSVDef().getFieldsAsString(", "), 
-					"#?" + _csv.getCSVDef().getFieldsAsString("?#, #?") + "?#");
-			_txtSQLInsert.setText(stm);
-		}
-	};
+//	Action actGeneratSQLCreate = new AbstractAction() 
+//	{
+//		@Override
+//		public void actionPerformed(ActionEvent e) 
+//		{
+//			String stm = _csv.getCSVDef().getFieldsTypeAsString(","+CC.NEW_LINE+"\t");
+//			stm = String.format(_wld.getSQL("Command.Create.Table"), _txtDBTableName.getText(), stm);
+//			_txtSQLCreate.setText(stm);
+//		}
+//	};
+//
+//	Action actGeneratSQLInsert = new AbstractAction() 
+//	{
+//		@Override
+//		public void actionPerformed(ActionEvent e) 
+//		{
+//			String stm = String.format(_wld.getSQL("Command.Insert.Into"), 
+//					_txtDBTableName.getText(), 
+//					_csv.getCSVDef().getFieldsAsString(", "), 
+//					"#?" + _csv.getCSVDef().getFieldsAsString("?#, #?") + "?#");
+//			_txtSQLInsert.setText(stm);
+//		}
+//	};
 	
 	Action actLoadCSVDef = new AbstractAction() 
 	{
@@ -606,6 +660,29 @@ public class fCSV extends JFrame
 		{
 			_setCurrentCSVDefinitionFileName();
 			_saveCSVDef();
+		}
+	};
+
+	Action actDBMExecute = new AbstractAction() 
+	{
+		@Override
+		public void actionPerformed(ActionEvent e) 
+		{
+			switch (((CodeText)_cboDBMCommand.getSelectedItem()).getCode()) 
+			{
+			case 1:
+				_execCommandShow();
+				break;
+			case 2:
+				_execCommandDeleteRows();
+				break;
+			case 3:
+				_execCommandCreateTable();
+				break;
+			default:
+				break;
+			}
+				
 		}
 	};
 
@@ -789,16 +866,194 @@ public class fCSV extends JFrame
 		);
 	}
 	
+	private void _showDBManager()
+	{
+		// first check DB connection !
+		if (_wld.get_wdb().IsDBConnectionParamDefined())
+		{
+			if (_trmDBMetaData == null)
+			{
+				LoadDBMetadataTreeNode();
+			}
+		}
+		else
+		{
+			infoNewLine("------------- ");
+			actSetDBConnection.actionPerformed(null);
+		}
+	}
 
-	private void LoadProgramPreference()
+	private void LoadDBMetadataTreeNode()
+	{
+		try
+		{
+			DatabaseMetaData md = _wld.get_wdb().getConn().getMetaData();
+			DefaultMutableTreeNode nodeDB = new DefaultMutableTreeNode(md.getDatabaseProductName());
+			_trmDBMetaData = new DefaultTreeModel(nodeDB);
+			ResultSet rsCat = md.getCatalogs();
+			while(rsCat.next())
+			{
+				String catalog = rsCat.getString(1);
+				if(catalog.equalsIgnoreCase(_wld.get_wdb().getDBConnParam().DBName))
+				{
+					DefaultMutableTreeNode nodeCat = new DefaultMutableTreeNode(catalog);
+					nodeDB.add(nodeCat);
+					//ResultSet rsSch = md.getSchemas(catalog, null);
+					ResultSet rsTab = md.getTables(catalog, null, null, new String[] {"TABLE","VIEW"});
+					DefaultMutableTreeNode prevNodeSch = null;
+					while (rsTab.next())
+					{
+						String schema = rsTab.getString(2);
+						if (schema.equals("sys"))
+							continue;
+						if (prevNodeSch == null || !prevNodeSch.toString().equals(schema))
+						{
+							DefaultMutableTreeNode nodeSch = new DefaultMutableTreeNode(schema);
+							nodeCat.add(nodeSch);
+							prevNodeSch = nodeSch;
+						}
+						//ResultSet rsTab = md.getTables(catalog, schema, null, null);
+						//while (rsTab.next())
+						//{
+						String tab = rsTab.getString(3);
+						if (rsTab.getString(2) != null && rsTab.getString(2).length() > 0)
+							tab = rsTab.getString(2) + "." + tab;
+						DefaultMutableTreeNode nodeTab = new DefaultMutableTreeNode(tab);
+						prevNodeSch.add(nodeTab);
+						ResultSet rsCol = md.getColumns(catalog, schema, rsTab.getString(3), null);
+						while (rsCol.next())
+						{
+							String col = rsCol.getString(4)+" - " + rsCol.getString("TYPE_NAME");
+							int colLen = rsCol.getInt("COLUMN_SIZE");
+							if (colLen > 0)
+								col += " [" + colLen+"]";
+							DefaultMutableTreeNode nodeCol = new DefaultMutableTreeNode(col);
+							nodeTab.add(nodeCol);
+						}
+						
+						if (nodeTab.children().hasMoreElements())
+						{
+							ResultSet rsColPK = md.getPrimaryKeys(catalog, schema, rsTab.getString(3));
+							if (rsColPK.next())
+							{
+								DefaultMutableTreeNode nodePK = new DefaultMutableTreeNode("[PK]");
+								nodeTab.add(nodePK);
+								do
+								{
+									String pkCol = rsColPK.getString("PK_NAME") + " [" + rsColPK.getString("COLUMN_NAME") + "]";
+									DefaultMutableTreeNode nodePKI = new DefaultMutableTreeNode(pkCol);
+									nodePK.add(nodePKI);
+									
+								} while (rsColPK.next());
+							}
+							
+						}
+						//}
+						
+					}
+				}
+			}
+			
+			_treeDB.setModel(_trmDBMetaData);
+		}
+		catch (SQLException ex)
+		{
+			infoNewLine("LoadDBMetadataTreeNode() - SQL error: [" + ex.getErrorCode() + "] - "+ex.getMessage());
+		}
+		catch (Exception ex)
+		{
+			infoNewLine("LoadDBMetadataTreeNode() - " + ex.getMessage());
+		}
+		
+	}
+
+	private void _execCommandShow()
+	{
+		try
+		{
+			String tabName = _treeDB.getSelectionPath().getLastPathComponent().toString(); 
+			String strSelect = CC.STR_EMPTY;
+			if (_txtDBMCondition.getText().length() > 0)
+				strSelect = String.format(_wld.getSQL("Command.SELECT.WHERE"), tabName, _txtDBMCondition.getText());
+			else
+				strSelect = String.format(_wld.getSQL("Command.SELECT"), tabName);
+	
+			Statement stm = _wld.get_wdb().getConn().createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+			infoNewLine(String.format(_wld.getString("Text.Message.ExecutingCommand"), strSelect)); 
+			ResultSet rs = stm.executeQuery(strSelect);
+			tmDBMResult tm = new tmDBMResult(rs);
+			_tabDBMResult.setModel(tm);
+			_tabDBMResult.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+			infoNewLine(_wld.getString("Text.Message.ExecutedCommand")); 
+			
+		}
+		catch (Exception ex)
+		{
+			infoNewLine(ex.getMessage());
+		}
+	}
+
+	private void _execCommandDeleteRows()
+	{
+		try
+		{
+			String tabName = _treeDB.getSelectionPath().getLastPathComponent().toString(); 
+			String strSelect = CC.STR_EMPTY;
+			
+			strSelect = String.format(_wld.getSQL("Command.Delete"), tabName, 
+				_txtDBMCondition.getText().length() > 0 ? _txtDBMCondition.getText() : "1=1");
+	
+			Statement stm = _wld.get_wdb().getConn().createStatement();
+			infoNewLine(String.format(_wld.getString("Text.Message.ExecutingCommand"), strSelect)); 
+			stm.executeUpdate(strSelect);
+			TableModel tm = _tabDBMResult.getModel();
+			if (tm != null)
+				tm = null;
+			_tabDBMResult.setModel(new tmDBMResult(null));
+			_tabDBMResult.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+			infoNewLine(_wld.getString("Text.Message.ExecutedCommand")); 
+		}
+		catch (Exception ex)
+		{
+			infoNewLine(ex.getMessage());
+		}
+	}
+
+	private void _execCommandCreateTable()
+	{
+		try
+		{
+//			String tabName = _treeDB.getSelectionPath().getLastPathComponent().toString(); 
+//			String strSelect = CC.STR_EMPTY;
+//			
+//			strSelect = String.format(_wld.getSQL("Command.Delete"), tabName, 
+//				_txtDBMCondition.getText().length() > 0 ? _txtDBMCondition.getText() : "1=1");
+//	
+//			Statement stm = _wld.get_wdb().getConn().createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+//			infoNewLine(String.format(_wld.getString("Text.Message.ExecutingCommand"), strSelect)); 
+//			ResultSet rs = stm.executeQuery(strSelect);
+//			TableModel tm = _tabDBMResult.getModel();
+//			if (tm != null)
+//				tm = null;
+//			_tabDBMResult.setModel(null);
+//			_tabDBMResult.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+//			infoNewLine(_wld.getString("Text.Message.ExecutedCommand"));
+			infoNewLine("DO IT LATTER !!!!!!!");
+		}
+		catch (Exception ex)
+		{
+			infoNewLine(ex.getMessage());
+		}
+	}
+	
+ 	private void LoadProgramPreference()
 	{
 		_wld.get_wdb().LoadDBConnectioParam2Reg(Sixteen.PREFERENCE_PATH);
 
 		Preferences node = Preferences.userRoot().node(Sixteen.PREFERENCE_PATH+"/CSV" );
 		AsRegister.LoadFrameStateSizeLocation(node, this);
 		_splVPanel.setDividerLocation(node.getInt("SplitDividerLocation", 100));
-		_splvSQLCI.setDividerLocation(node.getInt("SplitSQLCI", 100));
-		_splvSQL.setDividerLocation(node.getInt("SplitSQL", 100));
+		_splvDBMan.setDividerLocation(node.getInt("SplitDBMan", 100));
 		//_splHPanel.setDividerLocation(node.getInt("SplitHDividerLocation", 100));
 		_txtCSVFileName.setText(node.get("PrevFileName", CC.STR_EMPTY));
 		_currCSVDefFN = node.get("LastPath", CC.STR_EMPTY);
@@ -816,8 +1071,7 @@ public class fCSV extends JFrame
 		AsRegister.SaveFrameStateSizeLocation(node, this);
 		
 		node.putInt("SplitDividerLocation", _splVPanel.getDividerLocation());
-		node.putInt("SplitSQLCI", _splvSQLCI.getDividerLocation());
-		node.putInt("SplitSQL", _splvSQL.getDividerLocation());
+		node.putInt("SplitDBMan", _splvDBMan.getDividerLocation());
 		//node.putInt("SplitHDividerLocation", _splHPanel.getDividerLocation());
 		if (_txtCSVFileName.getText().length() > 0)
 			node.put("PrevFileName", _txtCSVFileName.getText());

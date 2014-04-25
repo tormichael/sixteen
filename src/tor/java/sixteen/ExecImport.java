@@ -145,21 +145,31 @@ public class ExecImport extends ExecWithDB
 					}
 					else if (ccc.SrcValue != null && ccc.SrcValue.length()>0)
 					{
-						String strVal = _csv.getValueAt(mCurRow, ccc.SrcValue);
-						if (strVal == null || strVal.length() == 0)
+						if (ccc.SrcFunction != null && ccc.SrcFunction.length() > 0)
 						{
-							pst.setString(colNum, null);
-						}
-						else if (ccc.SrcFunction != null && ccc.SrcFunction.equals(Sixteen.FUNCTION_TO_DATE))
-						{
-							SimpleDateFormat df = new SimpleDateFormat(ccc.SrcFunArg);
-							Date dt = df.parse(strVal);
-							df = new SimpleDateFormat("yyyyMMdd");
-							pst.setString(colNum, df.format(dt.getTime()));
+							if (ccc.SrcFunction.equals(Sixteen.FUNCTION_UNION))
+							{
+								String strVal = CC.STR_EMPTY;
+								String [] ss = ccc.SrcValue.split(";", -1);
+								for (String sv : ss)
+									strVal += (strVal.length() > 0 ? ccc.SrcFunArg : CC.STR_EMPTY) + _csv.getValueAt(mCurRow, sv.trim());
+								pst.setString(colNum, strVal);
+							}
+							else if (ccc.SrcFunction.equals(Sixteen.FUNCTION_TO_DATE))
+							{
+								String strVal = _csv.getValueAt(mCurRow, ccc.SrcValue);
+								SimpleDateFormat df = new SimpleDateFormat(ccc.SrcFunArg);
+								Date dt = df.parse(strVal);
+								df = new SimpleDateFormat("yyyyMMdd");
+								pst.setString(colNum, df.format(dt.getTime()));
+							}
 						}
 						else
 						{
-							if (ccc.TgtColType.indexOf("int") != -1)
+							String strVal = _csv.getValueAt(mCurRow, ccc.SrcValue);
+							if (strVal == null || strVal.length() == 0)
+								pst.setString(colNum, null);
+							else if (ccc.TgtColType.indexOf("int") != -1)
 								pst.setInt(colNum,Integer.parseInt(strVal));
 							else
 								pst.setString(colNum, strVal);

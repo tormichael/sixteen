@@ -95,7 +95,7 @@ public class tmColCorr extends AbstractTableModel
 	@Override
 	public void setValueAt(Object aValue, int rowIndex, int columnIndex) 
 	{
-		if (rowIndex < _arrColCorr.size())
+		if (rowIndex < _arrColCorr.size() && aValue != null)
 		{
 			switch (columnIndex)
 			{

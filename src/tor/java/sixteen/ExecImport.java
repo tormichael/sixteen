@@ -27,7 +27,7 @@ public class ExecImport extends ExecWithDB
 	{
 		Statement stmt = null;
 		String st = null;
-		
+		String strVal = null;
 		try
 		{
 			mPause = false;
@@ -121,10 +121,10 @@ public class ExecImport extends ExecWithDB
 				if (mPause)
 					mGate.acquire();
 
-				if ((++mCurRow) % 500 == 0)
+				if ((mCurRow) % 500 == 0)
 				{
 					Thread.sleep(1);
-					//showState(RowQuantity, mCurRow);
+					infoPosition("--> "+ mCurRow);
 				}
 				
 				
@@ -140,7 +140,7 @@ public class ExecImport extends ExecWithDB
 					}
 					else if (ccc.SrcFunction != null && ccc.SrcFunction.equals(Sixteen.FUNCTION_NEXT_CODE))
 					{
-						pst.setInt(colNum, mCurRow);
+						pst.setInt(colNum, mCurRow+1);
 						//continue;
 					}
 					else if (ccc.SrcValue != null && ccc.SrcValue.length()>0)
@@ -149,7 +149,7 @@ public class ExecImport extends ExecWithDB
 						{
 							if (ccc.SrcFunction.equals(Sixteen.FUNCTION_UNION))
 							{
-								String strVal = CC.STR_EMPTY;
+								strVal = CC.STR_EMPTY;
 								String [] ss = ccc.SrcValue.split(";", -1);
 								for (String sv : ss)
 									strVal += (strVal.length() > 0 ? ccc.SrcFunArg : CC.STR_EMPTY) + _csv.getValueAt(mCurRow, sv.trim());
@@ -157,16 +157,30 @@ public class ExecImport extends ExecWithDB
 							}
 							else if (ccc.SrcFunction.equals(Sixteen.FUNCTION_TO_DATE))
 							{
-								String strVal = _csv.getValueAt(mCurRow, ccc.SrcValue);
-								SimpleDateFormat df = new SimpleDateFormat(ccc.SrcFunArg);
-								Date dt = df.parse(strVal);
-								df = new SimpleDateFormat("yyyyMMdd");
-								pst.setString(colNum, df.format(dt.getTime()));
+								try
+								{
+									strVal = _csv.getValueAt(mCurRow, ccc.SrcValue);
+									if (strVal != null && strVal.trim().length()>0)
+									{
+										SimpleDateFormat df = new SimpleDateFormat(ccc.SrcFunArg);
+										Date dt = df.parse(strVal);
+										df = new SimpleDateFormat("yyyyMMdd");
+										pst.setString(colNum, df.format(dt.getTime()));
+									}
+									else
+									{
+										pst.setString(colNum, null);
+									}
+								}
+								catch (Exception ex)
+								{
+									infoNewLine(String.format(mWld.getString("Text.Message.Error.Row"), mCurRow, ex.getMessage() + " ("+strVal+")"));
+								}
 							}
 						}
 						else
 						{
-							String strVal = _csv.getValueAt(mCurRow, ccc.SrcValue);
+							strVal = _csv.getValueAt(mCurRow, ccc.SrcValue);
 							if (strVal == null || strVal.length() == 0)
 								pst.setString(colNum, null);
 							else if (ccc.TgtColType.indexOf("int") != -1)
@@ -181,6 +195,7 @@ public class ExecImport extends ExecWithDB
 					}
 				}
 				pst.executeUpdate();
+				mCurRow++;
 			}
 		}
 		catch (InterruptedException ie){
@@ -189,7 +204,7 @@ public class ExecImport extends ExecWithDB
 		}
 		catch (Exception ex)
 		{
-			infoNewLine(ex.getMessage());
+			infoNewLine(String.format(mWld.getString("Text.Message.Error.Row"), mCurRow, ex.getMessage() + " ("+strVal+")"));
 		}
 		finally
 		{

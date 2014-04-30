@@ -42,6 +42,7 @@ import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.JTextPane;
+import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
 import javax.swing.JTree;
 import javax.swing.SpinnerNumberModel;
@@ -92,6 +93,7 @@ public class fCSV extends JFrame
 	private JButton				_cmdReloadData;
 	private JButton				_cmdGeneratColumns;
 	private JButton				_cmdDBMExecute;
+	private JToggleButton 		_cmdImportExecut;
 	private tmCSVFields 		_tmFields;
 	private tmColCorr			_tmColCorr;
 	private JTable				_tabData;
@@ -108,6 +110,9 @@ public class fCSV extends JFrame
 	private JSplitPane _splVPanel;
 	private JSplitPane _splvDBMan;
 
+	private Thread _currThread;
+	private ExecImport _exeImp;
+	
 	private void info(String aText)
 	{
 		String result =  _txtStatus.getText() + aText;
@@ -135,6 +140,7 @@ public class fCSV extends JFrame
 		_wld = aWld;
 		_csv = new CSVData(aWld);
 		
+		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		this.setTitle(_wld.getString("Titles.CSVTools"));
 		this.setIconImage(_wld.getImage("CSV02a.png"));
 
@@ -354,9 +360,9 @@ public class fCSV extends JFrame
 			//gblTCC.setConstraints(scrollTCC, new GBC(0,1).setGridSpan(4, 1).setIns(2).setFill(GBC.BOTH).setWeight(1.0, 1.0));
 			pnlTCC.add(scrollTCC, BorderLayout.CENTER);
 			JPanel pnl = new JPanel(new BorderLayout());
-			JButton cmdImportExecut = new JButton(actImportData);
-			cmdImportExecut.setText(_wld.getString("Button.fCSV.ImportData"));
-			pnl.add(cmdImportExecut, BorderLayout.EAST);
+			_cmdImportExecut = new JToggleButton(actImportData);
+			_cmdImportExecut.setText(_wld.getString("Button.fCSV.ImportData"));
+			pnl.add(_cmdImportExecut, BorderLayout.EAST);
 			JButton cmdInitColCorrTable = new JButton(actInitColCorrTable);
 			cmdInitColCorrTable.setText(_wld.getString("Button.fCSV.InitColCorrTable"));
 			pnl.add(cmdInitColCorrTable, BorderLayout.WEST);
@@ -433,17 +439,7 @@ public class fCSV extends JFrame
 			}
 		});
 		
-		//
-		JComboBox<String> cboFunction = new JComboBox<String>();
-		_tabColCorr.getColumnModel().getColumn(3).setCellEditor(new DefaultCellEditor(cboFunction));
-		DefaultComboBoxModel<String> modCbo = new DefaultComboBoxModel<String>();
-		modCbo.addElement(CC.STR_EMPTY);
-		modCbo.addElement(Sixteen.FUNCTION_SRC_CODE);
-		modCbo.addElement(Sixteen.FUNCTION_NEXT_CODE);
-		modCbo.addElement(Sixteen.FUNCTION_UNION);
-		modCbo.addElement(Sixteen.FUNCTION_TO_DATE);
-		cboFunction.setModel(modCbo);
-		_tabColCorr.setRowHeight(cboFunction.getPreferredSize().height);
+		designTableColCorr();
 		
 		this.addWindowListener(new WindowAdapter() 
 		{
@@ -494,8 +490,13 @@ public class fCSV extends JFrame
 					_showDBManager();
 			}
 		});
-		
+
+		_exeImp = new ExecImport(_wld,  _csv);
+		_exeImp.set_extTextComponent(_txtStatus);
+		_exeImp.set_actFinshed(actImportDataFinished);
+		_exeImp.set_actError(actImportDataFinished);
 	}
+	
 	
 	Action actSetDBConnection = new AbstractAction() 
 	{
@@ -621,6 +622,9 @@ public class fCSV extends JFrame
 			infoNewLine(_csv.getResult());
 			infoNewLine("Loaded " + loadedRows + " rows");
 			
+			if (loadedRows == 0)
+				return;
+			
 			getCSVDefinition();
 			
 			CSVDefinition csd = _csv.getCSVDef();
@@ -712,6 +716,8 @@ public class fCSV extends JFrame
 					_tmColCorr = new tmColCorr(_wld, arrCC);
 					_tabColCorr.setModel(_tmColCorr);
 					_tabColCorr.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+					
+					designTableColCorr();
 				}
 				catch (SQLException ex)
 				{
@@ -736,13 +742,28 @@ public class fCSV extends JFrame
 		@Override
 		public void actionPerformed(ActionEvent e) 
 		{
+			
 			setCSVDefinition();
 			
-			ExecImport exe = new ExecImport(_wld,  _csv);
-			exe.set_extTextComponent(_txtStatus);
-			exe.set_actFinshed(actImportDataFinished);
-			Thread ct = new Thread(exe);
-			ct.start();
+			if (_cmdImportExecut.isSelected())
+			{
+				_cmdImportExecut.setText(_wld.getString("Button.fCSV.ImportData.Pause"));
+				if (_currThread == null)
+				{
+					_currThread = new Thread(_exeImp);
+					_currThread.start();
+				}
+				else
+				{
+					_exeImp.Continue();
+				}
+			}
+			else
+			{
+				_cmdImportExecut.setText(_wld.getString("Button.fCSV.ImportData.Continue"));
+				_exeImp.Pause();
+			}
+			
 			
 		}
 	};
@@ -752,13 +773,25 @@ public class fCSV extends JFrame
 		@Override
 		public void actionPerformed(ActionEvent e) 
 		{
-			//_ct = null;
-			//_cmdDo.setEnabled(false);
-			//_cmdExit.setText(_wld.getString("Button.fCronosExport.Ok"));
+			_currThread = null;
+			_cmdImportExecut.setEnabled(true);
+			_cmdImportExecut.setText(_wld.getString("Button.fCSV.ImportData"));
 			
 			getCSVDefinition();
 		}
 	};
+	
+//	Action actImportDataError = new AbstractAction() {
+//		
+//		@Override
+//		public void actionPerformed(ActionEvent e) 
+//		{
+//			_currThread = null;
+//			_cmdImportExecut.setEnabled(false);
+//			_cmdImportExecut.setText(_wld.getString("Button.fCSV.ImportData"));
+//			
+//		}
+//	};
 	
 	private void _setCurrentCSVDefinitionFileName()
 	{
@@ -820,7 +853,9 @@ public class fCSV extends JFrame
 		//csd.SQLCreateTable = _txtSQLCreate.getText();
 		//csd.SQLInsertInto = _txtSQLInsert.getText();
 		
-		csd.SICode = Integer.parseInt(_txtISCode.getText());
+		try	{ csd.SICode = Integer.parseInt(_txtISCode.getText()); } 
+		catch (Exception ex) { csd.SICode = 0;}
+		
 		csd.SIName = _txtISName.getText();
 		csd.SIDay = ((SpinnerNumberModel)_spnISDateDay.getModel()).getNumber().intValue();
 		csd.SIMonth = ((SpinnerNumberModel)_spnISDateMonth.getModel()).getNumber().intValue();
@@ -1044,6 +1079,21 @@ public class fCSV extends JFrame
 		{
 			infoNewLine(ex.getMessage());
 		}
+	}
+
+	private void designTableColCorr()
+	{
+		//
+		JComboBox<String> cboFunction = new JComboBox<String>();
+		_tabColCorr.getColumnModel().getColumn(3).setCellEditor(new DefaultCellEditor(cboFunction));
+		DefaultComboBoxModel<String> modCbo = new DefaultComboBoxModel<String>();
+		modCbo.addElement(CC.STR_EMPTY);
+		modCbo.addElement(Sixteen.FUNCTION_SRC_CODE);
+		modCbo.addElement(Sixteen.FUNCTION_NEXT_CODE);
+		modCbo.addElement(Sixteen.FUNCTION_UNION);
+		modCbo.addElement(Sixteen.FUNCTION_TO_DATE);
+		cboFunction.setModel(modCbo);
+		_tabColCorr.setRowHeight(cboFunction.getPreferredSize().height);
 	}
 	
  	private void LoadProgramPreference()

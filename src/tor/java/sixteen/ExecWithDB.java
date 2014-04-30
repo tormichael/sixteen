@@ -8,6 +8,8 @@ import java.util.concurrent.Semaphore;
 import javax.swing.Action;
 import javax.swing.text.JTextComponent;
 
+import org.omg.CORBA._PolicyStub;
+
 import JCommonTools.CC;
 
 public class ExecWithDB implements Runnable 
@@ -35,9 +37,23 @@ public class ExecWithDB implements Runnable
 		{
 			_extTextComponent.setText(result);
 			_extTextComponent.setSelectionStart(result.length());
+			_infoPos = _extTextComponent.getText().length();
 		}
 	}
-
+	private int _infoPos;
+	protected void infoPosition(String aText)
+	{
+		if (_extTextComponent != null)
+		{
+			_extTextComponent.setText(
+					_extTextComponent.getText().substring(0, _infoPos)
+					 + CC.NEW_LINE + aText
+			);
+		}
+		
+	}
+	
+	
 	public void set_extTextComponent(JTextComponent _extTextComponent) 
 	{
 		this._extTextComponent = _extTextComponent;
@@ -71,7 +87,7 @@ public class ExecWithDB implements Runnable
 		mGate = new Semaphore(1);
 		mPause  = true;
 		mCurRow = 0;
-		
+		_infoPos = 0;
 	}
 	
 	@Override

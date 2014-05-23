@@ -22,15 +22,17 @@ public class ExecWithDB implements Runnable
 	protected int mCurRow;
 	protected int mErrQnt;
 	
+	protected boolean mIsContinueIfError;
+	
 	private JTextComponent _extTextComponent;
 	protected Action mActFinshed;
 	protected Action mActError;
 
-	protected void infoNewLineTime(String aText)
+	public void infoNewLineTime(String aText)
 	{
 		infoNewLine("[" +new Time(System.currentTimeMillis()).toString() +"] " + aText);
 	}
-	protected void infoNewLine(String aText)
+	public void infoNewLine(String aText)
 	{
 		String result =  _extTextComponent.getText() + CC.NEW_LINE + aText;
 		if (_extTextComponent != null)
@@ -41,18 +43,23 @@ public class ExecWithDB implements Runnable
 		}
 	}
 	private int _infoPos;
-	protected void infoPosition(String aText)
+	public void infoPosition(String aText)
 	{
 		if (_extTextComponent != null)
 		{
 			_extTextComponent.setText(
 					_extTextComponent.getText().substring(0, _infoPos)
-					 + CC.NEW_LINE + aText
+					 + CC.NEW_LINE + aText + CC.NEW_LINE 
 			);
+			_extTextComponent.select(_extTextComponent.getText().length(), _extTextComponent.getText().length());
 		}
 		
 	}
 	
+	public int getErrorQuantity()
+	{
+		return mErrQnt;
+	}
 	
 	public void set_extTextComponent(JTextComponent _extTextComponent) 
 	{
@@ -66,7 +73,12 @@ public class ExecWithDB implements Runnable
 		this.mActError = _actError;
 	}
 
-	public  void Pause()
+	public void setContinueIfError(boolean aIsCIE)
+	{
+		mIsContinueIfError = aIsCIE;
+	}
+	
+ 	public void Pause()
 	{
 		mPause = true;
 		mGate.release();
@@ -79,6 +91,7 @@ public class ExecWithDB implements Runnable
 		infoNewLine(mWld.getString("Text.Continue") + " (" + new Time(System.currentTimeMillis()) + ")");
 	}
 
+	
 	public ExecWithDB(Sixteen aWld)
 	{
 		mWld = aWld;
@@ -88,6 +101,7 @@ public class ExecWithDB implements Runnable
 		mPause  = true;
 		mCurRow = 0;
 		_infoPos = 0;
+		mIsContinueIfError = false;
 	}
 	
 	@Override

@@ -1,5 +1,6 @@
 package tor.java.sixteen;
 
+import java.awt.event.ActionEvent;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -121,7 +122,7 @@ public class ExecImport extends ExecWithDB
 				if (mPause)
 					mGate.acquire();
 
-				if ((mCurRow) % 500 == 0)
+				if ((mCurRow) % mWld.DISPLAYEACHNNROW == 0)
 				{
 					Thread.sleep(1);
 					infoPosition("--> "+ mCurRow);
@@ -194,8 +195,16 @@ public class ExecImport extends ExecWithDB
 						pst.setString(colNum, null);
 					}
 				}
-				pst.executeUpdate();
 				mCurRow++;
+				try
+				{
+					pst.executeUpdate();
+				}
+				catch(SQLException ex)
+				{
+					_errAction(String.format(mWld.getString("Text.Message.Error.Row"), mCurRow, ex.getMessage() + " ("+pst.toString()+")"));
+					mErrQnt++;
+				}
 			}
 		}
 		catch (InterruptedException ie){
@@ -204,7 +213,8 @@ public class ExecImport extends ExecWithDB
 		}
 		catch (Exception ex)
 		{
-			infoNewLine(String.format(mWld.getString("Text.Message.Error.Row"), mCurRow, ex.getMessage() + " ("+strVal+")"));
+			infoNewLine(String.format(mWld.getString("Text.Message.Error.Row"), mCurRow, ex.getMessage()));
+			mErrQnt++;
 		}
 		finally
 		{
@@ -227,6 +237,22 @@ public class ExecImport extends ExecWithDB
 		
 		if (mActFinshed != null)
 			mActFinshed.actionPerformed(null);
+	}
+
+	private void _errAction(String aMsg)
+	{
+		if (mActError != null)
+		{
+			if (!mIsContinueIfError)
+				Pause();
+			ActionEvent ev = new ActionEvent(this, mIsContinueIfError ? 0 : 1, aMsg);
+			mActError.actionPerformed(ev);
+		}
+		else
+		{
+			infoNewLine(aMsg);
+		}
+		
 	}
 	
 	private String getStrOrNull(String aSrc)

@@ -30,6 +30,8 @@ public class Sixteen
 	public final static String FUNCTION_NEXT_CODE = "NEXT_CODE";
 	public final static String FUNCTION_TO_DATE = "TO_DATE";
 	public final static String FUNCTION_UNION = "UNION";
+
+	public final static int DISPLAYEACHNNROW = 1000;
 	
 	private ResourceBundle _bnd;
 	private ResourceBundle _bndSQL;

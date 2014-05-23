@@ -75,6 +75,7 @@ public class fCSV extends JFrame
 
 	private JTabbedPane 		_tp;
 	private JTextField			_txtCSVFileName;
+	private JFormattedTextField	_txtGoToRow;
 	private JTextField			_txtCharSeparator;
 	private JTextField			_txtDBMCondition;
 	private JTextField			_txtISCode;
@@ -90,10 +91,12 @@ public class fCSV extends JFrame
 	private JCheckBox 			_chkFirstRowHeader;
 	private JComboBox<CodeText> _cboISType;
 	private JComboBox<CodeText> _cboDBMCommand;
+	private JButton				_cmdGoToRow;
 	private JButton				_cmdReloadData;
 	private JButton				_cmdGeneratColumns;
 	private JButton				_cmdDBMExecute;
 	private JToggleButton 		_cmdImportExecut;
+	private JButton				_cmdImportInterrupt;
 	private tmCSVFields 		_tmFields;
 	private tmColCorr			_tmColCorr;
 	private JTable				_tabData;
@@ -101,6 +104,7 @@ public class fCSV extends JFrame
 	private JTable				_tabColCorr;
 	private JTable				_tabDBMResult;
 	private JLabel				_lblDBMCondition;
+	private JLabel				_lblRPR;
 	private JTree				_treeDB;
 	private TreeModel 			_trmDBMetaData;
 	
@@ -169,25 +173,38 @@ public class fCSV extends JFrame
 		gblData.setConstraints(lblBnkDescr, new GBC(0,0).setIns(2).setAnchor(GBC.EAST));
 		pnlData.add(lblBnkDescr);
 		_txtCSVFileName = new JTextField();
-		gblData.setConstraints(_txtCSVFileName, new GBC(1, 0).setFill(GBC.HORIZONTAL).setIns(2).setAnchor(GBC.WEST).setWeight(1.0, 0.0));
+		gblData.setConstraints(_txtCSVFileName, new GBC(1, 0).setIns(2).setGridSpan(3, 1).setFill(GBC.HORIZONTAL).setIns(2).setAnchor(GBC.WEST).setWeight(1.0, 0.0));
 		pnlData.add(_txtCSVFileName);
 		JButton _cmdSelectFile = new JButton(actSelectFile);
 		_cmdSelectFile.setText("...");
-		gblData.setConstraints(_cmdSelectFile, new GBC(2, 0).setIns(2).setAnchor(GBC.WEST));
+		gblData.setConstraints(_cmdSelectFile, new GBC(4, 0).setIns(2).setAnchor(GBC.WEST));
 		pnlData.add(_cmdSelectFile);
 		/// second row
+		_lblRPR = new JLabel(String.format(_wld.getString("Label.fCSV.RPR"), "0"));
+		gblData.setConstraints(_lblRPR, new GBC(0,1).setIns(2).setAnchor(GBC.WEST));
+		pnlData.add(_lblRPR);
+		_txtGoToRow = new JFormattedTextField(NumberFormat.getIntegerInstance());
+		//_txtGoToRow.setMinimumSize(new Dimension(50, (int) _txtGoToRow.getMinimumSize().getHeight()));
+		//_txtGoToRow.setSize(new Dimension((int) _txtGoToRow.getMinimumSize().getWidth(), (int) _txtGoToRow.getMinimumSize().getHeight()));
+		_txtGoToRow.setText("0");
+		gblData.setConstraints(_txtGoToRow, new GBC(1,1).setIns(2).setFill(GBC.HORIZONTAL).setWeight(0.1, 0.0));
+		pnlData.add(_txtGoToRow);
+		_cmdGoToRow = new JButton(actGoToRow);
+		_cmdGoToRow.setText(_wld.getString("Button.fCSV.GoToRow"));
+		gblData.setConstraints(_cmdGoToRow, new GBC(2,1).setIns(2).setAnchor(GBC.EAST));
+		pnlData.add(_cmdGoToRow);
 		JLabel lblBanksTab = new JLabel(_wld.getString("Label.fCSV.CSVData"));
-		gblData.setConstraints(lblBanksTab, new GBC(0,1).setGridSpan(2, 1).setIns(2).setAnchor(GBC.CENTER));
+		gblData.setConstraints(lblBanksTab, new GBC(3,1).setIns(2).setWeight(1.0, 0.0).setAnchor(GBC.CENTER));
 		pnlData.add(lblBanksTab);
 		_cmdReloadData = new JButton(actReloadData);
 		_cmdReloadData.setText(_wld.getString("Button.fCSV.RefreshTable"));
-		gblData.setConstraints(_cmdReloadData, new GBC(2,1).setIns(2).setAnchor(GBC.WEST));
+		gblData.setConstraints(_cmdReloadData, new GBC(4,1).setIns(2).setAnchor(GBC.WEST));
 		pnlData.add(_cmdReloadData);
 		// third row
 		//_tmData = new tmCSVData();
 		_tabData = new JTable();
 		JScrollPane scrollTabRes = new JScrollPane(_tabData); 
-		gblData.setConstraints(scrollTabRes, new GBC(0,2).setGridSpan(3, 1).setIns(2).setFill(GBC.BOTH).setWeight(1.0, 1.0));
+		gblData.setConstraints(scrollTabRes, new GBC(0,2).setGridSpan(5, 1).setIns(2).setFill(GBC.BOTH).setWeight(1.0, 1.0));
 		pnlData.add(scrollTabRes);
 		
 		_tp.addTab(_wld.getString("TitledBorder.fCSV.CSVFile"), pnlData);
@@ -360,9 +377,15 @@ public class fCSV extends JFrame
 			//gblTCC.setConstraints(scrollTCC, new GBC(0,1).setGridSpan(4, 1).setIns(2).setFill(GBC.BOTH).setWeight(1.0, 1.0));
 			pnlTCC.add(scrollTCC, BorderLayout.CENTER);
 			JPanel pnl = new JPanel(new BorderLayout());
-			_cmdImportExecut = new JToggleButton(actImportData);
-			_cmdImportExecut.setText(_wld.getString("Button.fCSV.ImportData"));
-			pnl.add(_cmdImportExecut, BorderLayout.EAST);
+				JPanel pnl2 = new JPanel(new BorderLayout());
+				_cmdImportExecut = new JToggleButton(actImportData);
+				_cmdImportExecut.setText(_wld.getString("Button.fCSV.ImportData"));
+				pnl2.add(_cmdImportExecut, BorderLayout.EAST);
+				_cmdImportInterrupt = new JButton(actImportDataInterrupt);
+				_cmdImportInterrupt.setText(_wld.getString("Button.fCSV.ImportData.Interrupt"));
+				pnl2.add(_cmdImportInterrupt, BorderLayout.CENTER);
+				_cmdImportInterrupt.setVisible(false);
+			pnl.add(pnl2, BorderLayout.EAST);
 			JButton cmdInitColCorrTable = new JButton(actInitColCorrTable);
 			cmdInitColCorrTable.setText(_wld.getString("Button.fCSV.InitColCorrTable"));
 			pnl.add(cmdInitColCorrTable, BorderLayout.WEST);
@@ -405,6 +428,15 @@ public class fCSV extends JFrame
 		_chkFirstRowHeader.setSelected(_csv.IsFirstRowHeader());
 		_txtCharSeparator.setText(_csv.getSeparator());
 		
+		_tabData.getSelectionModel().addListSelectionListener(new ListSelectionListener() 
+		{
+			@Override
+			public void valueChanged(ListSelectionEvent e) 
+			{
+				_txtGoToRow.setText((_tabData.getSelectedRow()+1)+CC.STR_EMPTY);
+			}
+		});
+		
 		JPopupMenu pppParamTab = new JPopupMenu();
 		JMenuItem mnpPTDelete = new JMenuItem(actCSVShiftRight);
 		mnpPTDelete.setText(_wld.getString("PopupMenu.fCSV.tabData.ShiftRight"));
@@ -415,14 +447,15 @@ public class fCSV extends JFrame
 		 * 
 		 */
 		_cboDBMCommand.addItem(new CodeText(1, _wld.getString("Text.DBM.Command.Show")));
-		_cboDBMCommand.addItem(new CodeText(2, _wld.getString("Text.DBM.Command.DeleteRows")));
-		_cboDBMCommand.addItem(new CodeText(3, _wld.getString("Text.DBM.Command.CreateTable")));
+		_cboDBMCommand.addItem(new CodeText(5, _wld.getString("Text.DBM.Command.Show.Quantity")));
+		_cboDBMCommand.addItem(new CodeText(100, _wld.getString("Text.DBM.Command.DeleteRows")));
+		_cboDBMCommand.addItem(new CodeText(200, _wld.getString("Text.DBM.Command.CreateTable")));
 		_cboDBMCommand.addActionListener(new ActionListener() 
 		{
 			@Override
 			public void actionPerformed(ActionEvent e) 
 			{
-				if (((CodeText)_cboDBMCommand.getSelectedItem()).getCode() == 3)
+				if (((CodeText)_cboDBMCommand.getSelectedItem()).getCode() == 200)
 				{
 					_lblDBMCondition.setText(_wld.getString("Label.fCSV.DBM.TableName"));
 					_pnlDBMResult.setBorder(BorderFactory.createTitledBorder(_wld.getString("TitledBorder.fCSV.DBM.ColDef")));
@@ -494,7 +527,8 @@ public class fCSV extends JFrame
 		_exeImp = new ExecImport(_wld,  _csv);
 		_exeImp.set_extTextComponent(_txtStatus);
 		_exeImp.set_actFinshed(actImportDataFinished);
-		_exeImp.set_actError(actImportDataFinished);
+		_exeImp.set_actError(actImportDataError);
+		_exeImp.setContinueIfError(true);
 	}
 	
 	
@@ -531,7 +565,8 @@ public class fCSV extends JFrame
 				int loadedRows = _csv.Load(_txtCSVFileName.getText(), _chkFirstRowHeader.isSelected());
 				infoNewLine(_csv.getResult());
 				infoNewLine("Loaded " + loadedRows + " rows");
-				
+				_lblRPR.setText(String.format(_wld.getString("Label.fCSV.RPR"), loadedRows+CC.STR_EMPTY));
+				_txtGoToRow.setText("1");
 				_csv.GenerateColumns();
 				_tmFields.setCSVDaata(_csv);
 				_tabFields.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
@@ -540,6 +575,20 @@ public class fCSV extends JFrame
 		}
 	};
 	
+	Action actGoToRow = new AbstractAction() 
+	{
+		@Override
+		public void actionPerformed(ActionEvent e) 
+		{
+			int ri = ((Number)_txtGoToRow.getValue()).intValue();// Integer.parseInt(_txtGoToRow.getText());
+			if (ri-- > 0)
+			{
+				_tabData.setRowSelectionInterval(ri, ri);
+				_tabData.scrollRectToVisible(_tabData.getCellRect(ri, 0, true));
+			}
+		}
+	};
+
 	Action actReloadData = new AbstractAction() 
 	{
 		@Override
@@ -621,6 +670,8 @@ public class fCSV extends JFrame
 			
 			infoNewLine(_csv.getResult());
 			infoNewLine("Loaded " + loadedRows + " rows");
+			_lblRPR.setText(String.format(_wld.getString("Label.fCSV.RPR"), loadedRows+CC.STR_EMPTY));
+			_txtGoToRow.setText("1");
 			
 			if (loadedRows == 0)
 				return;
@@ -677,10 +728,13 @@ public class fCSV extends JFrame
 			case 1:
 				_execCommandShow();
 				break;
-			case 2:
+			case 5:
+				_execCommandShowQuantity();
+				break;
+			case 100:
 				_execCommandDeleteRows();
 				break;
-			case 3:
+			case 200:
 				_execCommandCreateTable();
 				break;
 			default:
@@ -763,12 +817,12 @@ public class fCSV extends JFrame
 				_cmdImportExecut.setText(_wld.getString("Button.fCSV.ImportData.Continue"));
 				_exeImp.Pause();
 			}
-			
-			
+			_cmdImportInterrupt.setVisible(true);
 		}
 	};
 	
-	Action actImportDataFinished = new AbstractAction() {
+	Action actImportDataFinished = new AbstractAction() 
+	{
 		
 		@Override
 		public void actionPerformed(ActionEvent e) 
@@ -776,22 +830,48 @@ public class fCSV extends JFrame
 			_currThread = null;
 			_cmdImportExecut.setEnabled(true);
 			_cmdImportExecut.setText(_wld.getString("Button.fCSV.ImportData"));
+			_cmdImportInterrupt.setVisible(false);
+			
+			if (_exeImp.getErrorQuantity() > 0)
+				_exeImp.infoNewLine(String.format(_wld.getString("Text.Message.Error.Quantity"), _exeImp.getErrorQuantity()));
 			
 			getCSVDefinition();
+			
+			_cmdImportExecut.setSelected(false);
+		}
+	};
+
+	Action actImportDataInterrupt = new AbstractAction() 
+	{
+		
+		@Override
+		public void actionPerformed(ActionEvent e) 
+		{
+			if (_currThread != null)
+			{
+				_currThread.interrupt();
+				_currThread = null;
+				_cmdImportExecut.setEnabled(true);
+				_cmdImportExecut.setText(_wld.getString("Button.fCSV.ImportData"));
+				_cmdImportInterrupt.setVisible(false);
+			}
+			//getCSVDefinition();
 		}
 	};
 	
-//	Action actImportDataError = new AbstractAction() {
-//		
-//		@Override
-//		public void actionPerformed(ActionEvent e) 
-//		{
-//			_currThread = null;
-//			_cmdImportExecut.setEnabled(false);
-//			_cmdImportExecut.setText(_wld.getString("Button.fCSV.ImportData"));
-//			
-//		}
-//	};
+	Action actImportDataError = new AbstractAction() 
+	{
+		@Override
+		public void actionPerformed(ActionEvent e) 
+		{
+			_exeImp.infoNewLine(e.getActionCommand());
+			if (e.getID() ==1)
+			{
+				_cmdImportExecut.setSelected(false);
+				_cmdImportExecut.setText(_wld.getString("Button.fCSV.ImportData.Continue"));
+			}
+		}
+	};
 	
 	private void _setCurrentCSVDefinitionFileName()
 	{
@@ -1028,6 +1108,32 @@ public class fCSV extends JFrame
 		}
 	}
 
+	private void _execCommandShowQuantity()
+	{
+		try
+		{
+			String tabName = _treeDB.getSelectionPath().getLastPathComponent().toString(); 
+			String strSelect = CC.STR_EMPTY;
+			if (_txtDBMCondition.getText().length() > 0)
+				strSelect = String.format(_wld.getSQL("Command.SELECT.COUNT.WHERE"), tabName, _txtDBMCondition.getText());
+			else
+				strSelect = String.format(_wld.getSQL("Command.SELECT.COUNT"), tabName);
+	
+			Statement stm = _wld.get_wdb().getConn().createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+			infoNewLine(String.format(_wld.getString("Text.Message.ExecutingCommand"), strSelect)); 
+			ResultSet rs = stm.executeQuery(strSelect);
+			tmDBMResult tm = new tmDBMResult(rs);
+			_tabDBMResult.setModel(tm);
+			_tabDBMResult.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+			infoNewLine(_wld.getString("Text.Message.ExecutedCommand")); 
+			
+		}
+		catch (Exception ex)
+		{
+			infoNewLine(ex.getMessage());
+		}
+	}
+	
 	private void _execCommandDeleteRows()
 	{
 		try

@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<RefBook>
+    <refBookNodes>
+        <Nodes>
+            <Node>
+                <Nodes>
+                    <Node>
+                        <Nodes/>
+                        <alias>Персона</alias>
+                        <id>101</id>
+                        <name>Персона</name>
+                    </Node>
+                    <Node>
+                        <Nodes/>
+                        <alias>Орг.</alias>
+                        <id>103</id>
+                        <name>Организация</name>
+                    </Node>
+                    <Node>
+                        <Nodes/>
+                        <alias>Авто</alias>
+                        <id>105</id>
+                        <name>Транспортное средство</name>
+                    </Node>
+                </Nodes>
+                <alias>Тип об.</alias>
+                <id>100</id>
+                <name>Тип объекта</name>
+            </Node>
+            <Node>
+                <Nodes>
+                    <Node>
+                        <Nodes/>
+                        <alias>Негатив</alias>
+                        <id>155</id>
+                        <name>Негатив</name>
+                    </Node>
+                </Nodes>
+                <alias>ИнфоТип</alias>
+                <id>150</id>
+                <name>Тип информации</name>
+            </Node>
+            <Node>
+                <Nodes>
+                    <Node>
+                        <Nodes/>
+                        <alias>Стр</alias>
+                        <id>202</id>
+                        <name>Строка</name>
+                    </Node>
+                    <Node>
+                        <Nodes/>
+                        <alias>Число</alias>
+                        <id>204</id>
+                        <name>Число</name>
+                    </Node>
+                    <Node>
+                        <Nodes/>
+                        <alias>Дата</alias>
+                        <id>206</id>
+                        <name>Дата</name>
+                    </Node>
+                </Nodes>
+                <alias>Тип</alias>
+                <id>200</id>
+                <name>Тип величины</name>
+            </Node>
+            <Node>
+                <Nodes>
+                    <Node>
+                        <Nodes/>
+                        <alias>Фамилия</alias>
+                        <id>302</id>
+                        <name>Фамилия</name>
+                    </Node>
+                    <Node>
+                        <Nodes/>
+                        <alias>Test</alias>
+                        <id>310</id>
+                        <name>Test</name>
+                    </Node>
+                    <Node>
+                        <Nodes/>
+                        <alias>Имя</alias>
+                        <id>304</id>
+                        <name>Имя</name>
+                    </Node>
+                    <Node>
+                        <Nodes/>
+                        <alias>Отчество</alias>
+                        <id>306</id>
+                        <name>Отчество</name>
+                    </Node>
+                </Nodes>
+                <alias>Base</alias>
+                <id>300</id>
+                <name>Базовые названия</name>
+            </Node>
+        </Nodes>
+        <alias>Спарвочник</alias>
+        <id>1</id>
+        <name>Системный спарвочник</name>
+    </refBookNodes>
+</RefBook>

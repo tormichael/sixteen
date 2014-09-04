@@ -18,12 +18,14 @@ public class Sixteen
 	public final static String FD_RESOURCE_ICONS = "img/";
 
 	public final static String PREFERENCE_PATH = "/sixteen";
+
+	public final static String FN_RESOURCE_TEXT_CT = "JCommonTools.Rsc/JCTText";
 	
 	public final static String COLUMN_NAME_ROW_HASH = "id_row_hash";
 
 	public final static String DEF_TGT_CATALOG = "depot";
-	public final static String DEF_TGT_SCHEMA = "negative";
-	public final static String DEF_TGT_TABLE = "base";
+	public final static String DEF_TGT_SCHEMA = "src";
+	public final static String DEF_TGT_TABLE = "ival";
 
 	
 	public final static String FUNCTION_SRC_CODE = "SRC_CODE";
@@ -31,10 +33,11 @@ public class Sixteen
 	public final static String FUNCTION_TO_DATE = "TO_DATE";
 	public final static String FUNCTION_UNION = "UNION";
 
-	public final static int DISPLAYEACHNNROW = 1000;
+	public final static int DISPLAYEACHNNROW = 500;
 	
 	private ResourceBundle _bnd;
 	private ResourceBundle _bndSQL;
+	private ResourceBundle _bndCT;
 	private DBWork _wdb;
 	private AsRegister _reg;
 
@@ -85,6 +88,11 @@ public class Sixteen
 		//return ImageTools.CreateIcon(aName, 24).getImage();
 	}
 
+	public String getStringCT(String aKey)
+	{
+		return _bndCT.getString(aKey);
+	}
+	
 	public DBWork get_wdb() 
 	{
 		return _wdb;
@@ -104,6 +112,7 @@ public class Sixteen
 	{
 		_bnd = ResourceBundle.getBundle(FN_RESOURCE_TEXT);
 		_bndSQL = ResourceBundle.getBundle(FN_RESOURCE_SQL);
+		_bndCT = ResourceBundle.getBundle(FN_RESOURCE_TEXT_CT);
 		_wdb =new DBWork();
 		_reg = new AsRegister();
 	}

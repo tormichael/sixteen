@@ -27,6 +27,7 @@ public class CSVData  extends AbstractTableModel
 	private long 				_totalRows;
 	private String 				_separator;
 	private String 				_result;
+	private String				_fileName;
 	private FileReader 			_file;
 	private Scanner 			_inScan;
 	
@@ -49,7 +50,7 @@ public class CSVData  extends AbstractTableModel
 		if (_csvDef.MaxRowAtOnce > 0)
 			_csvDef.MaxRowAtOnce = aMaxRowAtOnce;
 		else
-			_csvDef.MaxRowAtOnce = Integer.MAX_VALUE;
+			_csvDef.MaxRowAtOnce = 10000;
 	}
 
 	public long getTotalRows()
@@ -99,6 +100,7 @@ public class CSVData  extends AbstractTableModel
 		_csvDef = new CSVDefinition();
 		_data  = new ArrayList<String>();
 		_separator = null;
+		_fileName = null;
 		_file = null;
 		_inScan = null;
 	}
@@ -124,11 +126,14 @@ public class CSVData  extends AbstractTableModel
 		int ret = 0;
 		
 		_csvDef.IsFirstRowHeader = aIsFirstHeader;
+		_fileName = aFileName;
 		
-		try{
-			_file = new FileReader(aFileName);
+		try
+		{
+			_file = new FileReader(_fileName);
 		}
-		catch (FileNotFoundException ex){
+		catch (FileNotFoundException ex)
+		{
 			_result = ex.getMessage();
 		}
 		
@@ -136,45 +141,82 @@ public class CSVData  extends AbstractTableModel
 		{
 			_inScan = new Scanner(_file);
 			
-			if (aIsFirstHeader)
+			if (_csvDef.IsFirstRowHeader)
 				_header = _inScan.nextLine();
 			else
 				_header = null;
 			
-			//_setColumns();
 			_totalRows = 0;
-			ret = Load(); 
+			_data.clear();
+			String inStr = null;
+			while (_inScan.hasNext())
+			{
+				inStr = _inScan.nextLine();
+				if (inStr != null && inStr.length() > 0)
+				{
+					_data.add(inStr);
+					ret++;
+					if (ret >= _csvDef.MaxRowAtOnce)
+						break;
+				}
+			}
+			
+			_totalRows = ret;
+
+			_inScan.close();
+			try
+			{
+				_file.close();
+				_file = null;
+			}
+			catch (IOException ex)
+			{
+				_result = ex.getMessage();
+			}
 		}
 		
 		return ret;
 	}
 	
-	public int Load()
+	public void OpenSourceFile()
 	{
-		int ret = 0;
-
-		_data.clear();
-		String inStr = null;
-		while (_inScan.hasNext())
+		if (_fileName != null && _fileName.length() > 0)
 		{
-			inStr = _inScan.nextLine();
-			if (inStr != null && inStr.length() > 0)
+			try
 			{
-				_data.add(inStr);
-				ret++;
-				if (ret >= _csvDef.MaxRowAtOnce)
-					break;
+				_file = new FileReader(_fileName);
+			}
+			catch (FileNotFoundException ex)
+			{
+				_result = ex.getMessage();
+			}
+			
+			if (_file != null)
+			{
+				_inScan = new Scanner(_file);
+				
+				if (_csvDef.IsFirstRowHeader)
+					_inScan.nextLine();
 			}
 		}
-		
-		_totalRows += ret;
+	}
 
-		if (ret < _csvDef.MaxRowAtOnce)
+	public String GetNextDataRow()
+	{
+		String ret = null;
+		
+		if  (_inScan != null && _inScan.hasNext())
+		{
+			ret = _inScan.nextLine();
+			//_totalRows ++;
+		}
+		else
 		{
 			_inScan.close();
 			try
 			{
 				_file.close();
+				_file = null;
 			}
 			catch (IOException ex)
 			{
@@ -260,6 +302,25 @@ public class CSVData  extends AbstractTableModel
 		}			
 		return ret;
 	}
+
+	public String getValueInStr(String aStr, String aColName) 
+	{
+		String ret = null;
+		if (_data.size() > 0)
+		{
+			if (_separator != null)
+			{
+				_ind = 0;
+				ret = _getValInStr(_csvDef.Fields, aStr, _separator, aColName);
+			}
+			else
+			{
+				ret = aStr;
+			}
+		}			
+		return ret;
+	}
+	
 	
 	private int _ind;
 	private String _getValInStr(ArrayList<CSVColumnDef> aFields, String aSrc, String aSep, int aInd)
@@ -298,6 +359,7 @@ public class CSVData  extends AbstractTableModel
 		return ret;
 		
 	}
+	
 
 	private String _getValInStr(ArrayList<CSVColumnDef> aFields, String aSrc, String aSep, String aColName)
 	{

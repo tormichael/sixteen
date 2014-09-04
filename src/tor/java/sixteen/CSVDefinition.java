@@ -41,6 +41,7 @@ public class CSVDefinition
 	public int		SIDay;
 	public String	SIRegion;
 	public int		SITypeR;
+	
 	public String	SINegDesc;
 	public String	SI3fDesc;
 	public String	SIOptDesc;
@@ -53,6 +54,8 @@ public class CSVDefinition
     @XmlElement (name = "ColCorr")
 	public ArrayList<CSVColCorr> 		ArrColCorr;
     
+    public RecordIOpt RecIOpt;
+    
     public CSVDefinition()
     {
     	FileName = CC.STR_EMPTY;
@@ -64,6 +67,7 @@ public class CSVDefinition
     	//SQLInsertInto = null;
     	Fields = new ArrayList<CSVColumnDef>();
     	ArrColCorr = new ArrayList<CSVColCorr>();
+		RecIOpt = new RecordIOpt("", false);
     }
     
     public void initFields(String [] aCols)
